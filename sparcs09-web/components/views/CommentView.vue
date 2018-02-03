@@ -5,7 +5,7 @@
     </figure>
     <div class="media-content">
       {{comment.content}}
-      <a class="button is-primary" @click="callback(comment)">삭제</a>
+      <a class="button is-primary" @click="callback(comment.id)" :disabled="comment.is_deleted">삭제</a>
     </div>
   </article>
 </template>

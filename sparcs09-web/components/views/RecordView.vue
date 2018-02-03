@@ -22,7 +22,7 @@
     </div>
     <div class="level">
       <div class="level-left">
-        <div class="level-item"
+        <div class="level-item">
           <a class="button is-danger" @click="callback(index)">삭제</a>
         </div>
       </div>

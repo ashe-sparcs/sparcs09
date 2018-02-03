@@ -17,15 +17,22 @@
       <section class="section">
         <div class="container">
           <h2 class="title is-2">상품 주문</h2>
-          <record-form :option_categories="item.option_categories" :callback="addRecord"></record-form>
-          <record-view v-for="(record, i) in records" :key="i" :index="i" :option_categories="item.option_categories" :record="record" :callback="removeRecord"></record-view>
+          <div v-if="payments.payment_me.records">
+            <p>이미 상품을 주문하셨습니다.</p>
+            <a class="button">주문 수정</a>
+          </div>
+          <div v-else>
+            <record-form :option_categories="item.option_categories" :callback="addRecord"></record-form>
+            <record-view v-for="(record, i) in records" :key="i" :index="i" :option_categories="item.option_categories" :record="record" :callback="removeRecord"></record-view>
+            <a class="button" @click="registerPaymentToItem()">주문</a>
+          </div>
           <hr>
         </div>
       </section>
       <section class="section">
         <div class="container">
           <h2 class="title is-2">상품 상세</h2>
-          <item-content-view :contents="item.contents"></item-content-view>
+          <item-content-view :contents="contents"></item-content-view>
         </div>
       </section>
       <section class="section">
@@ -49,70 +56,7 @@
   import RecordView from '~/components/views/RecordView.vue';
   import CommentForm from '~/components/forms/CommentForm.vue';
   import CommentView from '~/components/views/CommentView.vue';
-
-  import client from '../../utils/api-client';
-
-  async function getItemWithId(id) {
-    try {
-      const response = await client.request({
-        method: 'get',
-        url: `items/${id}/`,
-      });
-      return response.data;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  async function getContentsWithItemId(itemId) {
-    try {
-      const response = await client.request({
-        method: 'get',
-        url: `items/${itemId}/contents`,
-      });
-      return response.data.contents;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  async function getCommentsOfItem(itemId, offset) {
-    try {
-      const response = await client.request({
-        method: 'get',
-        url: `items/${itemId}/comments?offset=${offset}&sort=-created_date`,
-      });
-      return response.data;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-
-  async function addCommentToItem(itemId, comment) {
-    try {
-      const response = await client.request({
-        method: 'post',
-        url: `items/${itemId}/comments/`,
-        data: comment,
-      });
-      return response.data.comment;
-    } catch (e) {
-      throw e;
-    }
-  }
-
-  async function deleteCommentWithId(commentId) {
-    try {
-      const response = await client.request({
-        method: 'delete',
-        url: `comments/${commentId}`,
-      });
-      return response.data;
-    } catch (e) {
-      throw e;
-    }
-  }
+  
 
   export default {
     components: {
@@ -127,32 +71,33 @@
 
     data() {
       return {
-        item: null,
         records: [],
-        comments: { count: 0, comments: [] },
       };
     },
 
     computed: {
       ...mapGetters({
         user: 'user/getUser',
+        item: 'itemDetail/getItem',
+        contents: 'itemDetail/getContents',
+        comments: 'itemDetail/getComments',
+        payments: 'itemDetail/getPayments',
       }),
     },
 
-    async asyncData({ params, error }) {
+    async fetch({ store, params, error }) {
       try {
-        const item = await getItemWithId(params.id);
-        const contents = await getContentsWithItemId(params.id);
-        item.contents = contents;
-        const comments = await getCommentsOfItem(params.id, 0);
-        return {
-          item,
-          comments,
-        };
+        const { id } = params;
+        await Promise.all([
+          store.dispatch('itemDetail/getItem', { id }),
+          store.dispatch('itemDetail/getContentsOfItem', { id }),
+          store.dispatch('itemDetail/getCommentsOfItem', { id, offset: 0 }),
+          store.dispatch('itemDetail/getPaymentsOfItem', { id }),
+        ]);
       } catch (e) {
-        alert(e.response);
+        // alert(e.response);
+        console.log(e);
         error({ statusCode: e.response.status, message: e.response.statusText });
-        return null;
       }
     },
 
@@ -160,14 +105,18 @@
       async handleScroll() {
         if (window.innerHeight + window.scrollY >= document.body.scrollHeight) {
           // fetch older 10 comments
-          const older = await getCommentsOfItem(this.item.id, this.comments.comments.length);
-          this.comments.comments = this.comments.comments.concat(older.comments);
+          const payload = {
+            id: this.item.id,
+            offset: this.comments.count,
+          };
+          await this.$store.dispatch('itemDetail/getCommentsOfItem', payload);
         }
       },
       addRecord(record) {
         // add option object to page.
         const recordCopy = JSON.parse(JSON.stringify(record));
         record.quantity = 0;
+        console.log(this.records);
         this.records.push(recordCopy);
       },
       removeRecord(recordIndex) {
@@ -176,18 +125,31 @@
       },
       async addComment(comment) {
         try {
-          const resComment = await addCommentToItem(this.item.id, { content: comment.content });
+          const payload = {
+            id: this.item.id,
+            comment,
+          };
+          await this.$store.dispatch('itemDetail/addCommentToItem', payload);
           comment.content = '';
-          this.comments.comments.unshift(resComment);
-          this.comments.count += 1;
         } catch (e) {
           alert(e.response);
         }
       },
-      async deleteComment(comment) {
+      async deleteComment(id) {
         try {
-          await deleteCommentWithId(comment.id);
-          comment.content = 'DELETED';
+          await this.$store.dispatch('itemDetail/deleteComment', { id });
+        } catch (e) {
+          alert(e.response);
+        }
+      },
+      async registerPaymentToItem() {
+        try {
+          const payload = {
+            id: this.item.id,
+            records: this.records,
+          };
+          await this.$store.dispatch('itemDetail/registerPaymentToItem', payload);
+          alert('주문 완료');
         } catch (e) {
           alert(e.response);
         }
