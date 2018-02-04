@@ -1,21 +1,33 @@
 <template>
   <article class="media">
-    <figure class="media-left">
-      <p>{{comment.writer.name}}: </p>
-    </figure>
     <div class="media-content">
-      {{comment.content}}
-      <a class="button is-primary" @click="callback(comment.id)" :disabled="comment.is_deleted">삭제</a>
+      <div class="content">
+        <p>
+          <strong>{{comment.writer.name}}</strong>&nbsp;<small>31m</small>
+          <br>
+          {{comment.content}}
+        </p>
+      </div>
+    </div>
+    <div class="media-right">
+      <button v-if="user && user.sid == comment.writer.sid && !comment.is_deleted" class="delete" @click="callback(comment.id)" :disabled="comment.is_deleted"></button>
     </div>
   </article>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
   data() {
     return {
 
     };
+  },
+  computed: {
+    ...mapGetters({
+      user: 'user/getUser',
+    }),
   },
   props: {
     index: {
