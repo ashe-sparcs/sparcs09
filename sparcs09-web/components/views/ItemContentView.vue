@@ -1,20 +1,41 @@
 <template>
-  <div class="content">
-    <p>
-      <a href="https://www.apple.com/kr/iphone-x/">상품 링크</a>
-    </p>
-    <p>
-      <strong>미래와의 조우</strong>
-    </p>
-    <p>앞면 전체가 화면인 iPhone을 만드는 것, 우리가 늘 추구하던 비전이었습니다.</p>
-    <p>사뭇 기기의 물리적 실체는 사라지고 경험만 남는 몰입감, 그리고 탭 한 번, 목소리, 심지어는 눈길 한 번에도 반응하는 똑똑함, 그 모두를 갖춘 그런 iPhone을 말이죠. </p>
-    <p>이제 iPhone X에 이르러 그것은 현실이 되었습니다. </p>
-    <strong>지금 미래가 당신을 온전히 마주합니다.</strong>
-  </div>
+  <section class="section">
+    <div class="container">
+      <h2 class="title is-2">상품 정보</h2>
+      <div class="content">
+        <div v-for="content in contents" :key="content.order" class="level">
+          <div class="container" v-if="content.kind == 0">
+            <p>{{content.content}}</p>
+          </div>
+          <div class="container" v-else-if="content.kind == 1">
+            <figure class="image is-16by9">
+              <img :src="imageUrl(content.image)">
+            </figure>
+          </div>
+          <div class="container" v-else-if="content.kind == 2">
+            <p>
+              <a :href="content.link">상품 링크</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script>
-export default {
+import { mapGetters } from 'vuex';
 
+export default {
+  computed: {
+    ...mapGetters({
+      contents: 'contents/getContents',
+    }),
+  },
+  methods: {
+    imageUrl(url) {
+      return process.env.SPARCS09_STATIC_DOMAIN + url.replace('images', '');
+    },
+  },
 };
 </script>
