@@ -56,7 +56,7 @@ module.exports = {
     SPARCS_SSO_DOMAIN_VERSION: 'v2',
     SPARCS_SSO_CLIENT_ID: process.env.SPARCS_SSO_CLIENT_ID || '',
     SPARCS09_API_DOMAIN: process.env.SPARCS09_API_DOMAIN || 'http://localhost:3000/api',
-    SPARCS09_STATIC_DOMAIN: process.env.SPARCS09_API_DOMAIN || 'http://localhost:3000/static',
+    SPARCS09_STATIC_DOMAIN: process.env.SPARCS09_STATIC_DOMAIN || 'http://localhost:3000/static',
   },
   /*
   ** Add axios globally
